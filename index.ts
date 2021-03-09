@@ -62,6 +62,11 @@ app.post('/withdraw',
 app.delete('/reset', (req, res) => {
 
   //code your database reset here
+  delete req.query.username
+  delete req.query.password
+  delete req.query.firstname
+  delete req.query.lastname
+  delete req.query.balance
   
   return res.status(200).json({
     message: 'Reset database successfully'
