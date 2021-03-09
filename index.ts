@@ -3,6 +3,7 @@ import bodyParser from 'body-parser'
 import cors from 'cors'
 import bcrypt from 'bcrypt'
 import jwt from 'jsonwebtoken'
+import fs from 'fs'
 import { body, query, validationResult } from 'express-validator'
 
 const app = express()
@@ -17,19 +18,35 @@ interface JWTPayload {
   password: string;
 }
 
+interface DbSchema{
+  users : JWTPayload[]
+}
+
 app.post('/login',
   (req, res) => {
 
     const { username, password } = req.body
-    // Use username and password to create token.
-
-    return res.status(200).json({
-      message: 'Login succesfully',
-    })
+    // Use username and password to create token
+    const body = req.body
+    const raw = fs.readFileSync('db.json', 'utf8')
+    const db: DbSchema = JSON.parse(raw)
+    const user = db.users.find(user => user.username === body.username)
+    if (!user) {
+      res.status(400)
+      res.json({ message: 'Invalid username or password' })
+      return
+    }
+    if (!bcrypt.compareSync(body.password, user.password)) {
+      res.status(400)
+      res.json({ message: 'Invalid username or password' })
+      return
+    }
+    const token = jwt.sign({username: user.username }, SECRET)
+    res.json({ token })
   })
 
 app.post('/register',
-  (req, res) => {
+  (req, res) => 
 
     const { username, password, firstname, lastname, balance } = req.body
   })
@@ -62,6 +79,7 @@ app.post('/withdraw',
 app.delete('/reset', (req, res) => {
 
   //code your database reset here
+
   delete req.query.username
   delete req.query.password
   delete req.query.firstname
